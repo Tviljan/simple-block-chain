@@ -93,7 +93,7 @@ public class Block
 
 public class Blockchain
 {
-    public IList<Block> Chain { set; get; }
+    public IList<Block> Chain { set; get; } = new List<Block>();
     public int Difficulty { get; set; } = 2; // Simple difficulty
     private readonly TimeSpan TargetBlockTime = TimeSpan.FromSeconds(10);
     private readonly int AdjustmentInterval = 5; // Adjust difficulty every N blocks
@@ -112,7 +112,7 @@ public class Blockchain
 
     public Block CreateGenesisBlock()
     {
-        return new Block(DateTime.Now, null, "{}");
+        return new Block(DateTime.Now, string.Empty, string.Empty);
     }
 
     public void AddGenesisBlock()
