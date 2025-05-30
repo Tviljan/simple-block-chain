@@ -3,15 +3,19 @@ using System.Text;
 using System.Text.Json;
 
 Blockchain simpleChain = new Blockchain();
-Console.WriteLine("A simple blockchain in C#.\nCommands: add [data], validate, exit");
+Console.WriteLine("A simple blockchain in C#.\nCommands: add [data], validate, exit, save, load, print");
 
 while (true)
 {
     Console.Write("> ");
-    string input = Console.ReadLine();
-    string[] parts = input?.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+    string? input = Console.ReadLine();
+    if (string.IsNullOrWhiteSpace(input))
+    {
+        continue;
+    }
+    string[] parts = input.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
 
-    if (parts == null || parts.Length == 0)
+    if (parts.Length == 0)
     {
         continue;
     }
@@ -45,7 +49,6 @@ while (true)
 
         case "load":
             simpleChain.LoadFromFile("blockchain.txt");
-            Console.WriteLine("Blockchain loaded from blockchain.txt");
             break;
         case "print":
             foreach (var block in simpleChain.Chain)
@@ -54,7 +57,7 @@ while (true)
             }
             break;
         default:
-            Console.WriteLine("Unknown command. Available commands: add [data], validate, exit");
+            Console.WriteLine("Unknown command. Available commands: add [data], validate, exit, save, load, print");
             break;
     }
 }
@@ -211,7 +214,27 @@ public class Blockchain
     public void SaveToFile(string fileName)
     {
         string json = JsonSerializer.Serialize(this.Chain, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(fileName, json);
+        try
+        {
+            File.WriteAllText(fileName, json);
+            Console.WriteLine($"Blockchain saved to {fileName}");
+        }       
+        catch (UnauthorizedAccessException) 
+        {
+            Console.WriteLine($"Access denied when trying to save blockchain to {fileName}");
+        }        
+        catch (DirectoryNotFoundException)
+        {
+            Console.WriteLine($"Access denied when trying to save blockchain to {fileName}");
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"IO error when saving blockchain to {fileName}: {ex.Message}");
+        }
+        catch (System.Exception)
+        {
+            Console.WriteLine($"Error saving blockchain to {fileName}");
+        }
     }
 
     public void LoadFromFile(string fileName)
@@ -222,12 +245,34 @@ public class Blockchain
             return;
         }
 
-        string json = File.ReadAllText(fileName);
-        this.Chain = JsonSerializer.Deserialize<List<Block>>(json);
-        if (this.Chain == null)
+        try
         {
-            InitializeChain();
-            AddGenesisBlock();
+            string json = File.ReadAllText(fileName);
+
+            this.Chain = JsonSerializer.Deserialize<List<Block>>(json) ?? new();
+
+            if (this.Chain?.Count == 0)
+            {
+                InitializeChain();
+                AddGenesisBlock();
+            }
+            Console.WriteLine($"Blockchain loaded from {fileName}");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Console.WriteLine($"Access denied when trying to load blockchain from {fileName}");
+        }
+        catch (DirectoryNotFoundException)
+        {
+            Console.WriteLine($"Directory not found when trying to load blockchain from {fileName}");
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"IO error when loading blockchain from {fileName}: {ex.Message}");
+        }
+        catch (System.Exception)
+        {
+            Console.WriteLine($"Error loading blockchain from {fileName}");
         }
     }
 
